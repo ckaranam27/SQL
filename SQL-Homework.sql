@@ -29,20 +29,24 @@ ORDER BY LAST_NAME,FIRST_NAME;
 
 
 -- 2d. Using IN, display the country_id and country columns of the following countries: Afghanistan, Bangladesh, and China:
+
 SELECT * FROM COUNTRY WHERE COUNTRY IN ('Afghanistan', 'Bangladesh', 'China');
 
 
 -- 3a. Add a middle_name column to the table actor. Position it between first_name and last_name. Hint: you will need to specify the data type.
+
 ALTER TABLE ACTOR ADD MIDDLE_NAME VARCHAR(20) AFTER FIRST_NAME;
 
 SELECT * FROM ACTOR;
 
 
 -- 3b. You realize that some of these actors have tremendously long last names. Change the data type of the middle_name column to blobs.
+
 ALTER TABLE ACTOR MODIFY MIDDLE_NAME BLOB ;
 DESCRIBE ACTOR;
 -- 
 -- 3c. Now delete the middle_name column.
+
 ALTER TABLE ACTOR DROP MIDDLE_NAME;
 
 DESCRIBE ACTOR;
@@ -51,16 +55,15 @@ DESCRIBE ACTOR;
 SELECT LAST_NAME,COUNT(LAST_NAME) AS COUNT_OF_LASTNAME FROM ACTOR  GROUP BY LAST_NAME;
 
 -- 4b. List last names of actors and the number of actors who have that last name, but only for names that are shared by at least two actors
+
 SELECT last_name, COUNT(last_name) as 'Count of Last Name'
 FROM actor
 GROUP BY last_name
 HAVING COUNT(last_name) <=2;
 
-SELECT LAST_NAME,COUNT(LAST_NAME ) AS 'COUNT_OF_LASTNAME' FROM ACTOR  
-GROUP BY LAST_NAME
-HAVING COUNT(LAST_NAME)=2;
 
 -- 4c. Oh, no! The actor HARPO WILLIAMS was accidentally entered in the actor table as GROUCHO WILLIAMS, the name of Harpo's second cousin's husband's yoga teacher. Write a query to fix the record.
+
 SELECT * FROM ACTOR WHERE LAST_NAME  LIKE '%WILLIAMS%';
 
 UPDATE ACTOR SET FIRST_NAME ='HARPO'
@@ -72,6 +75,7 @@ AND LAST_NAME='WILLIAMS';
 -- If the first name of the actor is currently HARPO, change it to GROUCHO. Otherwise, change the first name to MUCHO GROUCHO, 
 -- as that is exactly what the actor will be with the grievous error. BE CAREFUL NOT TO CHANGE THE FIRST NAME OF EVERY ACTOR TO MUCHO GROUCHO, 
 -- HOWEVER! (Hint: update the record using a unique identifier.)
+
 UPDATE ACTOR SET FIRST_NAME =
 CASE 
 WHEN FIRST_NAME = 'HARPO'
@@ -84,10 +88,12 @@ WHERE ACTOR_ID=172;
 -- 5a. You cannot locate the schema of the address table. Which query would you use to re-create it?
 -- 
 -- Hint: https://dev.mysql.com/doc/refman/5.7/en/show-create-table.html
+
 SHOW CREATE TABLE SAKILA.ADDRESS;
 
 
 -- 6a. Use JOIN to display the first and last names, as well as the address, of each staff member. Use the tables staff and address:
+
 SELECT  FIRST_NAME, LAST_NAME, ADDRESS FROM STAFF S 
 INNER JOIN ADDRESS A 
 ON S.ADDRESS_ID = A.ADDRESS_ID;
@@ -103,8 +109,9 @@ ON S.STAFF_ID = P.STAFF_ID
 GROUP BY P.STAFF_ID
 ORDER BY LAST_NAME ASC;
 -- HAVING P.PAYMENT_DATE BETWEEN '01-AUG-2005'  AND '31-AUG-2005' ;
--- 
+
 -- 6c. List each film and the number of actors who are listed for that film. Use tables film_actor and film. Use inner join.
+
 SELECT TITLE,COUNT(ACTOR_ID) FROM FILM_ACTOR FA
 INNER JOIN FILM F
 ON FA.FILM_ID = F.FILM_ID
@@ -143,6 +150,7 @@ AND (TITLE LIKE 'K%' ) OR (TITLE LIKE 'Q%' );
 SELECT * FROM film_actor;
 
 -- 7b. Use subqueries to display all actors who appear in the film Alone Trip.
+
 SELECT FIRST_NAME,LAST_NAME FROM actor A
 WHERE ACTOR_ID IN (SELECT ACTOR_ID FROM FILM_ACTOR FA WHERE  FILM_ID IN (SELECT FILM_ID FROM FILM WHERE TITLE ="Alone Trip"));
 
@@ -171,7 +179,6 @@ USE SAKILA;
 -- 7e. Display the most frequently rented movies in descending order.
 SELECT I.FILM_ID,F.TITLE,COUNT(R.INVENTORY_ID)  FROM INVENTORY I
 INNER JOIN RENTAL R 
--- ON  I.INVENTORY_ID=R.INVENTORY_ID
 ON i.inventory_id = r.inventory_id
 INNER JOIN FILM_TEXT  F
 ON I.FILM_ID=F.FILM_ID
@@ -192,7 +199,8 @@ ORDER BY SUM(AMOUNT);
 
 
 -- 7g. Write a query to display for each store its store ID, city, and country.
-SELECT  store_id,city,country FROM STORE S 
+
+SELECT  S.store_id, C.city, con.country FROM STORE S 
 inner join address a
 on a.address_id=s.address_id
 inner join city  c
@@ -211,23 +219,48 @@ select * from city;
 select * from country;
 
 
-SELECT s.store_id, city, country
-FROM store s
-INNER JOIN customer cu
-ON s.store_id = cu.store_id
-INNER JOIN staff st
-ON s.store_id = st.store_id
-INNER JOIN address a
-ON cu.address_id = a.address_id
-INNER JOIN city ci
-ON a.city_id = ci.city_id
-INNER JOIN country coun
-ON ci.country_id = coun.country_id
-WHERE country = 'CANADA' AND country = 'AUSTRAILA';
-
 
 -- 7h. List the top five genres in gross revenue in descending order. (Hint: you may need to use the following tables: category, film_category, inventory, payment, and rental.)
 
+select * from category;
+select * from film_category;
+select * from inventory;
+select * from payment;
+select * from rental;
 
+select sum(p.amount) as amt, c.name as  name from payment p
+inner join 
+rental r 
+on p.rental_id = r.rental_id 
+inner join inventory i
+on  r.inventory_id = i.inventory_id 
+inner join film_category f
+on i.film_id = f.film_id 
+inner join category c
+on f.category_id = c.Category_id
+group by c.name
+order by amt desc limit 5
+;
+-- 8a. In your new role as an executive, you would like to have an easy way of viewing the Top five genres by gross revenue. 
+-- Use the solution from the problem above to create a view. If you haven't solved 7h, you can substitute another query to create a view.
+create view  top_5 as (select sum(p.amount) as amt, c.name as  name from payment p
+inner join 
+rental r 
+on p.rental_id = r.rental_id 
+inner join inventory i
+on  r.inventory_id = i.inventory_id 
+inner join film_category f
+on i.film_id = f.film_id 
+inner join category c
+on f.category_id = c.Category_id
+group by c.name
+order by amt desc limit 5);
+
+-- 8b. How would you display the view that you created in 8a?
+select name as business_catogery,amt as collections from top_5;
+-- 
+-- 8c. You find that you no longer need the view top_five_genres. Write a query to delete it.
+
+drop view top_5;
 
 
